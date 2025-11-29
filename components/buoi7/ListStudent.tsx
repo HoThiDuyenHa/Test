@@ -19,9 +19,9 @@ type Student = {
 const ListStudent = () => {
   const [students, setStudents] = useState<Student[]>([
     { id: 1, name: 'An', age: 18, grade: 9 },
-    { id: 2, name: 'Bình', age: 19, grade: 7 },
+    { id: 2, name: 'Bình', age: 19, grade: 8 },
     { id: 3, name: 'Chi', age: 20, grade: 8.5 },
-    { id: 4, name: 'Dương', age: 18, grade: 6 },
+    { id: 4, name: 'Dương', age: 18, grade: 8 },
     { id: 5, name: 'Hà', age: 17, grade: 9.5 },
   ]);
 
@@ -29,46 +29,80 @@ const ListStudent = () => {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [grade, setGrade] = useState('');
+  const [editId, setEditId] = useState<number | null>(null); // Thêm trạng thái sửa
 
-  // 🔹 Thêm học sinh mới
-  const handleAdd = () => {
+  // 🔹 Thêm hoặc sửa học sinh
+  const handleAddOrEdit = () => {
     if (!name || !age || !grade) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin!');
       return;
     }
 
-    const newStudent: Student = {
-      id: Date.now(),
-      name,
-      age: Number(age),
-      grade: Number(grade),
-    };
-    setStudents([...students, newStudent]);
+    if (editId) {
+      // Cập nhật học sinh đang sửa
+      const updatedStudents = students.map((s) =>
+        s.id === editId ? { ...s, name, age: Number(age), grade: Number(grade) } : s
+      );
+      setStudents(updatedStudents);
+      setEditId(null); // reset trạng thái sau khi sửa xong
+    } else {
+      // Thêm học sinh mới
+      const newStudent: Student = {
+        id: Date.now(),
+        name,
+        age: Number(age),
+        grade: Number(grade),
+      };
+      setStudents([...students, newStudent]);
+    }
+
+    // Reset form
     setName('');
     setAge('');
     setGrade('');
   };
 
+  // 🔹 Chọn học sinh để sửa
+  const handleEdit = (student: Student) => {
+    setName(student.name);
+    setAge(student.age.toString());
+    setGrade(student.grade.toString());
+    setEditId(student.id);
+  };
+
   // 🔹 Xóa học sinh
   const handleDelete = (id: number) => {
-    setStudents(students.filter((s) => s.id !== id));
+    Alert.alert(
+      'Xác nhận xóa',
+      'Bạn có chắc muốn xóa học sinh này không?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: () => {
+            setStudents(students.filter((s) => s.id !== id));
+          },
+        },
+      ]
+    );
   };
 
-  // 🔹 Sửa học sinh (ở đây chỉ là demo)
-  const handleEdit = (id: number) => {
-    Alert.alert('Chức năng sửa', `Bạn muốn sửa học sinh có ID = ${id}`);
-  };
 
-  // 🔹 Lọc danh sách theo search
-  const filteredStudents = students.filter(
-    (s) =>
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.age.toString().includes(search) ||
-      s.grade.toString().includes(search)
-  );
+
+const handleSortByGrade = () => {
+  const sortedStudents = [...students].sort((a, b) => b.grade - a.grade);
+  setStudents(sortedStudents);
+};
 
   // 🔹 Tính số học sinh có điểm trên 8
-  const highScoreCount = students.filter((s) => s.grade > 8).length;
+  const highScoreCount = students.filter((s) => s.grade == 8).length;
+
+
+const filteredStudents = students.filter( (s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()) || 
+    s.age.toString().includes(search) ||
+    s.grade.toString().includes(search) );
 
   // 🔹 Component hiển thị từng học sinh
   const renderStudent = ({ item, index }: { item: Student; index: number }) => (
@@ -80,7 +114,7 @@ const ListStudent = () => {
       <View style={styles.actionContainer}>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => handleEdit(item.id)}
+          onPress={() => handleEdit(item)}
         >
           <Text style={styles.actionText}>Sửa</Text>
         </TouchableOpacity>
@@ -125,12 +159,16 @@ const ListStudent = () => {
         keyboardType="numeric"
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleAdd}>
-        <Text style={styles.buttonText}>Thêm học sinh</Text>
+      <TouchableOpacity style={styles.button} onPress={handleAddOrEdit}>
+        <Text style={styles.buttonText}>{editId ? 'Lưu chỉnh sửa' : 'Thêm học sinh'}</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#28a745' }]} onPress={handleSortByGrade}>
+      <Text style={styles.buttonText}>Sắp xếp theo điểm (cao → thấp)</Text>
+    </TouchableOpacity>
+
 
       <Text style={styles.text}>
-        Số học sinh có điểm trên 8: {highScoreCount}
+        Số học sinh có điểm bằng 8: {highScoreCount}
       </Text>
 
       <View style={styles.tableHeader}>
